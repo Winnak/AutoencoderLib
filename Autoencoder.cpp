@@ -20,6 +20,7 @@ struct Autoencoder
 	shark::ConcatenatedModel<shark::FloatVector> model;
 };
 
+
 static void SetupLayers(Autoencoder * ae)
 {
 	//We use a dense linear model with rectifier activations
@@ -144,4 +145,19 @@ Autoencoder* LoadAutoencoder(const char* path)
 	ifs.close();
 
 	return outAe;
+}
+
+unsigned int GetDecodedDimension(const Autoencoder* ae)
+{
+	return ae->inDims;
+}
+
+unsigned int GetEncodedDimension(const Autoencoder* ae)
+{
+	return ae->midDims;
+}
+
+unsigned int GetLayerCount(const Autoencoder* ae)
+{
+	return ae->layers;
 }
