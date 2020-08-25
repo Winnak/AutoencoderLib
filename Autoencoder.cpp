@@ -5,6 +5,8 @@
 #include <shark/ObjectiveFunctions/Loss/SquaredLoss.h>
 #include <shark/ObjectiveFunctions/Regularizer.h> 
 
+#include <vector>
+
 #include "Autoencoder.h"
 
 typedef unsigned int uint32;
@@ -74,10 +76,10 @@ void Decode(const Autoencoder* ae, const float* input, float* output)
 	std::move(b.cbegin(), b.cend(), output);
 }
 
-double TrainAutoencoder(Autoencoder* ae, const std::vector<float*>& data, const AutoencoderTrainingOptions& options)
+double TrainAutoencoder(Autoencoder* ae, const float* data, unsigned int dataCount, const AutoencoderTrainingOptions& options = k_DefaultTrainingOption);
 {
 	std::vector<shark::FloatVector> fvData;
-	for (size_t i = 0; i < data.size(); i++)
+	for (size_t i = 0; i < dataCount; i++)
 	{
 		const shark::FloatVector fv(data[i], data[i] + ae->inDims);
 		fvData.push_back(fv);
