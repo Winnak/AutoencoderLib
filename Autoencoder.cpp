@@ -76,7 +76,55 @@ void Decode(const Autoencoder* ae, const float* input, float* output)
 	std::move(b.cbegin(), b.cend(), output);
 }
 
-double TrainAutoencoder(Autoencoder* ae, const float* data, unsigned int dataCount, const AutoencoderTrainingOptions& options = k_DefaultTrainingOption);
+template<bool useLowestLoss, bool doPrint>
+shark::SingleObjectiveResultSet<shark::FloatVector> TrainLoop(
+	int epochs,
+	shark::Adam<shark::FloatVector> &optimizer,
+	shark::ErrorFunction<shark::FloatVector> &error,
+	uint32 printInterval)
+{
+	shark::SingleObjectiveResultSet<shark::FloatVector> solution;
+
+	// for useLowestLoss
+	shark::SingleObjectiveResultSet<shark::FloatVector> bestModel;
+	bestModel.value = FLT_MAX;
+
+	for (uint32 i = 0; i != epochs; ++i)
+	{
+		optimizer.step(error);
+		if constexpr (useLowestLoss || doPrint)
+		{
+			solution = optimizer.solution();
+		}
+
+		if constexpr (useLowestLoss)
+		{
+			if (solution.value < bestModel.value)
+			{
+				bestModel = solution;
+			}
+		}
+
+		if constexpr (doPrint)
+		{
+			if ((i + 1) % printInterval == 0)
+			{
+				std::cout << i + 1 << "," << solution.value << std::endl;
+			}
+		}
+	}
+
+	if constexpr (useLowestLoss)
+	{
+		return bestModel;
+	}
+	else
+	{
+		return optimizer.solution();
+	}
+}
+
+double TrainAutoencoder(Autoencoder* ae, const float** data, unsigned int dataCount, const AutoencoderTrainingOptions& options)
 {
 	std::vector<shark::FloatVector> fvData;
 	for (size_t i = 0; i < dataCount; i++)
@@ -85,7 +133,7 @@ double TrainAutoencoder(Autoencoder* ae, const float* data, unsigned int dataCou
 		fvData.push_back(fv);
 	}
 	shark::UnlabeledData<shark::FloatVector> ds = shark::createDataFromRange(fvData);
-	
+
 	shark::LabeledData<shark::FloatVector, shark::FloatVector> trainSet(ds, ds);
 	shark::SquaredLoss<shark::FloatVector> loss;
 	shark::ErrorFunction<shark::FloatVector> error(trainSet, &ae->model, &loss, true);
@@ -97,17 +145,33 @@ double TrainAutoencoder(Autoencoder* ae, const float* data, unsigned int dataCou
 	shark::Adam<shark::FloatVector> optimizer;
 	error.init();
 	optimizer.init(error);
-	for (uint32 i = 0; i != options.epochs; ++i)
+	shark::SingleObjectiveResultSet<shark::FloatVector> result;
+
+	if (options.printInterval < options.epochs)
 	{
-		optimizer.step(error);
-		if (i % 100 == 0)
+		if (options.useLowestLoss)
 		{
-			std::cout << i << " " << optimizer.solution().value << std::endl;
+			result = TrainLoop<true, true>(options.epochs, optimizer, error, options.printInterval);
+		}
+		else
+		{
+			result = TrainLoop<false, true>(options.epochs, optimizer, error, options.printInterval);
+		}
+	}
+	else
+	{
+		if (options.useLowestLoss)
+		{
+			result = TrainLoop<true, false>(options.epochs, optimizer, error, options.printInterval);
+		}
+		else
+		{
+			result = TrainLoop<false, false>(options.epochs, optimizer, error, options.printInterval);
 		}
 	}
 
-	ae->model.setParameterVector(optimizer.solution().point);
-	return optimizer.solution().value;
+	ae->model.setParameterVector(result.point);
+	return result.value;
 }
 
 bool SaveAutoencoder(const Autoencoder* ae, const char* path)
