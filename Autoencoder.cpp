@@ -143,6 +143,7 @@ double TrainAutoencoder(Autoencoder* ae, const float** data, unsigned int dataCo
 	shark::initRandomNormal(ae->model, options.initialWeightNoiseScale);
 
 	shark::Adam<shark::FloatVector> optimizer;
+	optimizer.setEta(options.AdamlearningRate);
 	error.init();
 	optimizer.init(error);
 	shark::SingleObjectiveResultSet<shark::FloatVector> result;

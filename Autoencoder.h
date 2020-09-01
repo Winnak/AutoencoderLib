@@ -5,6 +5,7 @@ struct AutoencoderTrainingOptions
 	unsigned int epochs;
 	float regularisation;
 	float initialWeightNoiseScale;
+	float adamLearningRate;
 	unsigned int printInterval;
 	bool useLowestLoss;
 };
@@ -13,6 +14,7 @@ constexpr static AutoencoderTrainingOptions k_DefaultTrainingOption
 {
 	1000,
 	0.01f,
+	0.001f,
 	0.01f,
 	100,
 	true,
