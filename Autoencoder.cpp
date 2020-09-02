@@ -144,6 +144,8 @@ double TrainAutoencoder(Autoencoder* ae, const float** data, unsigned int dataCo
 
 	shark::Adam<shark::FloatVector> optimizer;
 	optimizer.setEta(options.adamLearningRate);
+	optimizer.setBeta1(options.beta1);
+	optimizer.setBeta2(options.beta2);
 	error.init();
 	optimizer.init(error);
 	shark::SingleObjectiveResultSet<shark::FloatVector> result;
