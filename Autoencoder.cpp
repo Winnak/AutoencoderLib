@@ -25,7 +25,6 @@ struct Autoencoder
 
 static void SetupLayers(Autoencoder * ae)
 {
-	//We use a dense linear model with rectifier activations
 	typedef shark::LinearModel<shark::FloatVector, shark::RectifierNeuron> DenseLayer;
 
 	int step = (ae->inDims - ae->midDims) / (ae->layers);
@@ -36,7 +35,10 @@ static void SetupLayers(Autoencoder * ae)
 
 	}
 	ae->encoder.add(new DenseLayer(ae->inDims - (ae->layers - 1) * step, ae->midDims), true);
-	ae->decoder.add(new DenseLayer(ae->midDims + (ae->layers - 1) * step, ae->inDims), true);
+
+	// For the output layer we switch the ReLU out with TanH, so we can return something between -1 and 1.
+	// Some alternatives include: ELU or sigmoid.
+	ae->decoder.add(new shark::LinearModel<shark::FloatVector, shark::TanhNeuron>(ae->midDims + (ae->layers - 1) * step, ae->inDims), true);
 	ae->model = ae->encoder >> ae->decoder;
 }
 
